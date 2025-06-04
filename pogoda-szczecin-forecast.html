@@ -1,0 +1,85 @@
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pogoda w Szczecinie</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f8ff;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    .forecast {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .day {
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .day img {
+      width: 50px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Tygodniowa prognoza pogody – Szczecin</h2>
+  <div class="forecast" id="forecast"></div>
+
+  <script>
+    const apiKey = '05f1103ef0ea94313d01b984028976d8';
+    const city = 'Szczecin';
+
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=pl&appid=${apiKey}`)
+      .then(response => response.json())
+      .then(data => {
+        const forecastContainer = document.getElementById('forecast');
+        const dailyData = {};
+
+        data.list.forEach(item => {
+          const date = new Date(item.dt_txt);
+          const day = date.toLocaleDateString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short' });
+          if (!dailyData[day]) {
+            dailyData[day] = {
+              tempMin: item.main.temp_min,
+              tempMax: item.main.temp_max,
+              icon: item.weather[0].icon,
+              desc: item.weather[0].description
+            };
+          } else {
+            dailyData[day].tempMin = Math.min(dailyData[day].tempMin, item.main.temp_min);
+            dailyData[day].tempMax = Math.max(dailyData[day].tempMax, item.main.temp_max);
+          }
+        });
+
+        Object.keys(dailyData).slice(0, 5).forEach(day => {
+          const info = dailyData[day];
+          const dayDiv = document.createElement('div');
+          dayDiv.className = 'day';
+          dayDiv.innerHTML = `
+            <strong>${day}</strong><br>
+            <img src="https://openweathermap.org/img/wn/${info.icon}@2x.png" alt="${info.desc}"><br>
+            ${info.desc}<br>
+            <span>${Math.round(info.tempMin)}°C / ${Math.round(info.tempMax)}°C</span>
+          `;
+          forecastContainer.appendChild(dayDiv);
+        });
+      })
+      .catch(error => {
+        document.getElementById('forecast').innerHTML = '<p>Nie udało się pobrać danych pogodowych.</p>';
+        console.error(error);
+      });
+  </script>
+</body>
+</html>
